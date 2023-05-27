@@ -1,9 +1,14 @@
-import Image from "next/image";
+import { getServerSession } from "next-auth";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession();
+  console.log(session);
+  const user = session?.user;
+
   return (
-    <main className="">
-      <p>홈페이지</p>
-    </main>
+    <section className="">
+      <p>로그인 안해도 보임</p>
+      {user && <p>{user.email}로그인 됨</p>}
+    </section>
   );
 }
