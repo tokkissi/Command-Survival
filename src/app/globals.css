@@ -1,3 +1,52 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .speech-bubble-user {
+    position: relative;
+    background: #fae100;
+    border-radius: 0.4em;
+    padding: 1rem 1.5rem;
+    margin-left: auto;
+  }
+  .speech-bubble-user:after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 2rem;
+    width: 0;
+    height: 0;
+    border: 1.563em solid transparent;
+    border-left-color: #fae100;
+    border-right: 0;
+    border-top: 0;
+    margin-top: -0.781em;
+    margin-right: -1.562em;
+  }
+
+  .speech-bubble-ai {
+    position: relative;
+    background: white;
+    border-radius: 0.4em;
+    padding: 1rem 1.5rem;
+    margin-right: auto;
+    margin-left: 2.5em;
+  }
+  .speech-bubble-ai:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2rem;
+    width: 0;
+    height: 0;
+    border: 1.563em solid transparent;
+    border-right-color: white;
+    border-left: 0;
+    border-top: 0;
+    margin-top: -0.781em;
+    margin-left: -1.562em;
+  }
+}
+
+/* @apply relative, bg-[#fae100], rounded-[0.4em], after:content-none, absolute, right-0, top-1/2, w-0, h-0, border-[50px], border-transparent, border-l-[#fae100], border-r-0, border-t-0, mt-[-25px], mr-[-50px]; */
