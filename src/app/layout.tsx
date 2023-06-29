@@ -3,6 +3,7 @@ import "./globals.css";
 import { Open_Sans } from "next/font/google";
 import AuthContext from "@/context/AuthContext";
 import Image from "next/image";
+import ReactQueryProvider from "@/util/reactQueryProvider";
 
 const Sans = Open_Sans({ subsets: ["latin"] });
 
@@ -19,12 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={Sans.className}>
       <body className="max-w-screen-xl w-full h-screen overflow-y-auto bg-neutral-500 flex flex-col mx-auto bg-[url('/images/bg_wide_1360-768.png')] bg-fixed bg-no-repeat bg-cover bg-center">
-        <AuthContext>
-          <header className="w-full mx-auto bg-white">
-            <NavBar />
-          </header>
-          <main className="grow">{children}</main>
-        </AuthContext>
+        <ReactQueryProvider>
+          <AuthContext>
+            <header className="w-full mx-auto bg-white">
+              <NavBar />
+            </header>
+            <main className="grow">{children}</main>
+          </AuthContext>
+        </ReactQueryProvider>
       </body>
     </html>
   );
