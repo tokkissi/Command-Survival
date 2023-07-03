@@ -27,6 +27,7 @@ export default function RootLayout({
             </header>
             <main className="grow">{children}</main>
           </AuthContext>
+          <div id="portal" />
         </ReactQueryProvider>
       </body>
     </html>
