@@ -12,7 +12,7 @@ const blackHanSans = Black_Han_Sans({ weight: "400", subsets: ["latin"] });
 export default function Button({ text, onClick }: Props) {
   return (
     <button
-      className={`${blackHanSans.className} relative mx-auto font-bold text-xl  text-[#333333] hover:text-[#009063]`}
+      className={`${blackHanSans.className} relative mx-auto font-bold text-xl  text-[#333333] hover:text-[#009063] hover:cursor-pointer`}
       onClick={onClick}
     >
       <Image

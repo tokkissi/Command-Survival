@@ -1,4 +1,4 @@
-import Console from "@/components/Console";
+import GameStart from "@/components/GameStart";
 import { getServerSession } from "next-auth";
 
 export default async function Home() {
@@ -7,10 +7,8 @@ export default async function Home() {
   const user = session?.user;
 
   return (
-    <section className="">
-      <p>로그인 안해도 보임</p>
-      {user && <p>{user.email}로그인 됨</p>}
-      {user && <Console />}
+    <section className="h-full">
+      <GameStart user={user?.email} />
     </section>
   );
 }
