@@ -6,52 +6,87 @@ import ModalPortal from "./ui/ModalPortal";
 import InfoModal from "./ui/InfoModal";
 import DetailAttribute from "./DetailAttribute";
 import DetailItems from "./DetailItems";
+import useUIStore from "@/stores/useUIStore";
 
 export default function HUD() {
   const [openModal, setOpenModal] = useState(false);
   const [select, setSelect] = useState<string>("");
   const { hp, currentFloor, maxFloor, attribute } = useGameDataStore();
+  const { isMobile, menuToggled, setMenuToggled } = useUIStore();
   const maxHP = attribute.maxHP;
+
+  const toggleBtnSize = 16;
+  const mobileIconSize = 30;
+
+  const handleToggle = () => {
+    setMenuToggled(!menuToggled);
+  };
+
   return (
-    <div className="bg-slate-400/70 rounded p-2 absolute">
+    <section className="w-full text-base sm:w-48 " onClick={handleToggle}>
       <HealthBar maxHP={maxHP} currentHP={hp} />
-      <div className="flex items-center justify-between">
-        <div className="font-bold text-2xl my-2 ml-2 text">
-          보스까지 {maxFloor - currentFloor + 1}턴 남음!
+      <div className="flex flex-col items-center">
+        <div
+          className="flex items-center justify-center font-bold my-1"
+          onClick={handleToggle}
+        >
+          <p className="text-xs sm:text-xl">
+            보스까지 {maxFloor - currentFloor + 1}턴 남음!
+          </p>
+          {menuToggled && (
+            <Image
+              className="ml-2 sm:hidden"
+              src="/images/toggle-up.png"
+              alt="toggle up option icon"
+              width={toggleBtnSize}
+              height={toggleBtnSize}
+            />
+          )}
+          {!menuToggled && (
+            <Image
+              className="ml-2 sm:hidden"
+              src="/images/toggle-down.png"
+              alt="toggle down option icon"
+              width={toggleBtnSize}
+              height={toggleBtnSize}
+            />
+          )}
         </div>
 
-        <div className="flex items-center">
-          <div
-            className="hover:cursor-pointer hover:opacity-60"
-            onClick={() => {
-              setOpenModal(true);
-              setSelect("attribute");
-            }}
-          >
-            <Image
-              src="/images/attribute-fist.png"
-              alt="attributes icon"
-              width={50}
-              height={50}
-            />
-          </div>
+        {isMobile && menuToggled && (
+          <div className="flex items-center">
+            <div
+              className="hover:cursor-pointer hover:opacity-60"
+              onClick={() => {
+                setOpenModal(true);
+                setSelect("attribute");
+              }}
+            >
+              <Image
+                src="/images/attribute-fist.png"
+                alt="attributes icon"
+                width={mobileIconSize}
+                height={mobileIconSize}
+              />
+            </div>
 
-          <div
-            className="hover:cursor-pointer hover:opacity-60"
-            onClick={() => {
-              setOpenModal(true);
-              setSelect("items");
-            }}
-          >
-            <Image
-              className="border-2 bg-white border-white rounded-full"
-              src="/images/bag.png"
-              alt="items icon"
-              width={46}
-              height={46}
-            />
+            <div
+              className="hover:cursor-pointer hover:opacity-60"
+              onClick={() => {
+                setOpenModal(true);
+                setSelect("items");
+              }}
+            >
+              <Image
+                className="border-2 bg-white border-white rounded-full"
+                src="/images/bag.png"
+                alt="items icon"
+                width={mobileIconSize - 2}
+                height={mobileIconSize - 2}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {openModal && select === "attribute" && (
@@ -68,6 +103,6 @@ export default function HUD() {
           </InfoModal>
         </ModalPortal>
       )}
-    </div>
+    </section>
   );
 }
