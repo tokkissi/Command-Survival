@@ -13,19 +13,13 @@ export default function AITextBubble({ text, isLoding = false }: Props) {
 
   return (
     <div className="flex items-start">
-      {!isMobile && text ? (
-        <div>
-          <AIAvatar />
-        </div>
-      ) : (
-        <></>
-      )}
-
-      {isLoding ? (
+      {isLoding && (
         <>
-          <div>
-            <AIAvatar />
-          </div>
+          {!isMobile && (
+            <div>
+              <AIAvatar />
+            </div>
+          )}
           <span className="speech-bubble-ai flex">
             답변 중
             <PulseLoader
@@ -35,14 +29,17 @@ export default function AITextBubble({ text, isLoding = false }: Props) {
             />
           </span>
         </>
-      ) : (
-        <></>
       )}
 
-      {!isLoding && text ? (
-        <span className={`speech-bubble-ai ${flexibleMargin}`}>{text}</span>
-      ) : (
-        <></>
+      {!isLoding && text && (
+        <>
+          {!isMobile && (
+            <div>
+              <AIAvatar />
+            </div>
+          )}
+          <span className={`speech-bubble-ai ${flexibleMargin}`}>{text}</span>
+        </>
       )}
     </div>
   );
