@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import AITextBubble from "./ui/conversation/AITextBubble";
 import UserTextBubble from "./ui/conversation/UserTextBubble";
 import useUIStore from "@/stores/useUIStore";
+import { formatGptResponse } from "@/util/gptResponseFommatter";
 
 export default function Console() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +28,7 @@ export default function Console() {
       .then((res) => res.json())
       .then((res) => {
         setAsk(inputRef.current!.value);
-        setAnswer(res);
+        setAnswer(formatGptResponse(res));
       })
       .catch((error) => console.error("api call error: ", error))
       .finally(() => {

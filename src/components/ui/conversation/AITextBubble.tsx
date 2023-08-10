@@ -38,7 +38,10 @@ export default function AITextBubble({ text, isLoding = false }: Props) {
               <AIAvatar />
             </div>
           )}
-          <span className={`speech-bubble-ai ${flexibleMargin}`}>{text}</span>
+          <div
+            dangerouslySetInnerHTML={{ __html: text }}
+            className={`speech-bubble-ai ${flexibleMargin}`}
+          />
         </>
       )}
     </div>
