@@ -1,15 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import AITextBubble from "./ui/conversation/AITextBubble";
-import UserTextBubble from "./ui/conversation/UserTextBubble";
 import useUIStore from "@/stores/useUIStore";
 import { formatGptResponse } from "@/util/gptResponseFommatter";
+import TextBubble from "./ui/conversation/TextBubble";
 
 export default function Console() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [ask, setAsk] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [conversationHistory, setConversationHistory] = useState<
+    {
+      text: string;
+      role: "user" | "assistant";
+    }[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const { isMobile } = useUIStore();
   const flexiblePadding = isMobile ? "" : "p-4";
@@ -19,16 +22,24 @@ export default function Console() {
     if (inputRef.current === null) return;
     if (inputRef.current.value === "") return;
 
+    const userInputAsk = inputRef.current.value;
     // 유저 입력을 전송하여 답함
     setIsLoading(true);
+    // 최신 대화 4개만 새 대화에 반영하도록 함
     fetch("/api/play", {
       method: "POST",
-      body: JSON.stringify({ prompt: inputRef.current.value }),
+      body: JSON.stringify({
+        prompt: userInputAsk,
+        conversation: conversationHistory.slice(-4),
+      }),
     })
       .then((res) => res.json())
       .then((res) => {
-        setAsk(inputRef.current!.value);
-        setAnswer(formatGptResponse(res));
+        setConversationHistory((preHistory) => [
+          ...preHistory,
+          { role: "user", text: userInputAsk },
+          { role: "assistant", text: formatGptResponse(res) },
+        ]);
       })
       .catch((error) => console.error("api call error: ", error))
       .finally(() => {
@@ -47,9 +58,18 @@ export default function Console() {
       <div className="grow"></div>
 
       <div className={`w-full flex flex-col p-6 gap-6 ${flexibleFontSize}`}>
-        {ask && <UserTextBubble text={ask} />}
+        {/* {ask && <UserTextBubble text={ask} />}
 
-        {<AITextBubble text={answer} isLoding={isLoading} />}
+        {<AITextBubble text={answer} isLoding={isLoading} />} */}
+        {/* 새로하기를 눌렀을 경우 system  */}
+        {conversationHistory.map((message, index) => (
+          <TextBubble
+            text={message.text}
+            role={message.role}
+            isLoading={isLoading && index === conversationHistory.length - 1}
+            key={index}
+          />
+        ))}
       </div>
 
       <div className="flex rounded-md mt-8 m-4 overflow-hidden">

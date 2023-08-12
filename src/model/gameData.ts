@@ -17,3 +17,9 @@ export type Attribute = {
   DEF: number;
   maxHP: number;
 };
+
+export type TextBubbleProps = {
+  text: string;
+  role: "user" | "assistant";
+  isLoading: boolean;
+};
