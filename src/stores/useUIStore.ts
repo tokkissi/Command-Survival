@@ -9,22 +9,25 @@ type UIStore = {
 };
 
 const useUIStore = create<UIStore>()(
-  devtools((set) => ({
-    menuToggled: false,
-    setMenuToggled(newToggleState: boolean) {
-      set((state) => ({
-        ...state,
-        menuToggled: newToggleState,
-      }));
-    },
-    isMobile: false,
-    setIsMobile(newDeviceState: boolean) {
-      set((state) => ({
-        ...state,
-        isMobile: newDeviceState,
-      }));
-    },
-  }))
+  devtools(
+    (set) => ({
+      menuToggled: false,
+      setMenuToggled(newToggleState: boolean) {
+        set((state) => ({
+          ...state,
+          menuToggled: newToggleState,
+        }));
+      },
+      isMobile: false,
+      setIsMobile(newDeviceState: boolean) {
+        set((state) => ({
+          ...state,
+          isMobile: newDeviceState,
+        }));
+      },
+    }),
+    { store: "UIStore" }
+  )
 );
 
 export default useUIStore;
