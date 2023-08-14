@@ -1,14 +1,14 @@
-import useGameDataStore from "@/stores/useGameDataStore";
+import { useGameDataStore } from "@/stores/useGameDataStore";
 
 export default function DetailAttribute() {
-  const { attribute } = useGameDataStore();
+  const { gameData } = useGameDataStore();
   return (
     <div className="text-lg">
       <p className="mb-4">현재 능력치</p>
       <div className="text-base mb-8">
-        <p>ATK: {attribute.ATK}</p>
-        <p>DEF: {attribute.DEF}</p>
-        <p>maxHP: {attribute.maxHP}</p>
+        <p>ATK: {gameData.attribute.ATK}</p>
+        <p>DEF: {gameData.attribute.DEF}</p>
+        <p>maxHP: {gameData.attribute.maxHP}</p>
       </div>
       <div className="text-xs">
         <p>적에게 주는 피해 = ATK</p>

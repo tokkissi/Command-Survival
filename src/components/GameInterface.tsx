@@ -5,28 +5,15 @@ import Console from "./Console";
 import { useSession } from "next-auth/react";
 import { useLoadSaveData } from "@/hooks/useLoadSaveData";
 import Image from "next/image";
-import useGameDataStore from "@/stores/useGameDataStore";
 import GameSideBar from "./GameSideBar";
-import useWindowWidth from "@/hooks/useWindowWidth";
-import useUIStore from "@/stores/useUIStore";
+import { useGameDataStore } from "@/stores/useGameDataStore";
 
 // 세이브 데이터 가져오기. 첫 시작 유무 확인용
 // 쿠키, 로컬스토리지 등은 데이터 삭제 위험이 있으므로 db에 저장함
 export default function GameInterface() {
   const [loadCheck, setLoadCheck] = useState(false); // 처음하기 랜더링 여부
 
-  const {
-    attribute,
-    setAttribute,
-    items,
-    setItems,
-    hp,
-    setHp,
-    maxFloor,
-    setMaxFloor,
-    currentFloor,
-    setCurrentFloor,
-  } = useGameDataStore();
+  const { gameData, setGameData } = useGameDataStore();
   const { data: session } = useSession();
   const email = session?.user?.email!;
 
@@ -76,14 +63,7 @@ export default function GameInterface() {
             <span
               className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
               onClick={() => {
-                // 세이브데이터를 상태 값으로 세팅
-                const { attribute, currentFloor, hp, items, maxFloor } =
-                  fetchedSaveData;
-                setAttribute(attribute);
-                setItems(items);
-                setCurrentFloor(currentFloor);
-                setHp(hp);
-                setMaxFloor(maxFloor);
+                setGameData(fetchedSaveData);
                 setLoadCheck(true);
               }}
             >
