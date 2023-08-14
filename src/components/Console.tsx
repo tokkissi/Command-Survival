@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import useUIStore from "@/stores/useUIStore";
 import { formatGptResponse } from "@/util/gptResponseFommatter";
 import TextBubble from "./ui/conversation/TextBubble";
+import { useMutation } from "@tanstack/react-query";
+import { askAIWithUserInput } from "@/service/conversation";
 
 export default function Console() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -13,10 +15,28 @@ export default function Console() {
       role: "user" | "assistant";
     }[]
   >([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { isMobile } = useUIStore();
   const flexiblePadding = isMobile ? "" : "p-4";
   const flexibleFontSize = isMobile ? "text-sm" : "text-base";
+
+  const mutation = useMutation(askAIWithUserInput, {
+    onSuccess: (res) => {
+      setConversationHistory((preHistory) => [
+        ...preHistory.slice(0, preHistory.length - 1),
+        { role: "assistant", text: formatGptResponse(res) },
+      ]);
+    },
+    onError: (error) => {
+      console.error("api call error: ", error);
+      setConversationHistory((preHistory) => [
+        ...preHistory.slice(0, preHistory.length - 1),
+        {
+          role: "assistant",
+          text: "서버 요청에 실패했습니다. 다시 질문해주세요",
+        },
+      ]);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +46,6 @@ export default function Console() {
 
     const userInputAsk = inputRef.current.value;
 
-    setIsLoading(true);
     setConversationHistory((preHistory) => [
       ...preHistory,
       { role: "user", text: userInputAsk },
@@ -34,40 +53,10 @@ export default function Console() {
     ]);
     inputRef.current!.value = "";
 
-    // 유저 입력을 전송하여 답함
-    // 최신 대화 4개만 새 대화에 반영하도록 함
-    fetch("/api/play", {
-      method: "POST",
-      body: JSON.stringify({
-        prompt: userInputAsk,
-        conversation: conversationHistory.slice(-4),
-      }),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`에러 코드 :${res.status}`);
-        }
-        return res.json();
-      })
-      .then((res) => {
-        setConversationHistory((preHistory) => [
-          ...preHistory.slice(0, preHistory.length - 1), // 마지막 로딩 중인 메시지를 제외한 이력
-          { role: "assistant", text: formatGptResponse(res) },
-        ]);
-      })
-      .catch((error) => {
-        console.error("api call error: ", error);
-        setConversationHistory((preHistory) => [
-          ...preHistory.slice(0, preHistory.length - 1), // 마지막 로딩 중인 메시지를 제외한 이력
-          {
-            role: "assistant",
-            text: "서버 요청에 실패했습니다. 다시 질문해주세요",
-          },
-        ]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    mutation.mutate({
+      prompt: userInputAsk,
+      conversation: conversationHistory.slice(-4),
+    });
   };
 
   return (
@@ -85,7 +74,9 @@ export default function Console() {
           <TextBubble
             text={message.text}
             role={message.role}
-            isLoading={isLoading && index === conversationHistory.length - 1}
+            isLoading={
+              mutation.isLoading && index === conversationHistory.length - 1
+            }
             key={index}
           />
         ))}
@@ -109,22 +100,6 @@ export default function Console() {
           전송
         </button>
       </form>
-
-      {/* <div className="flex rounded-md mt-8 m-4 overflow-hidden">
-        <input
-          className="bg-white w-full px-2 border outline-gray-600"
-          placeholder="다음에 할 행동을 30자 이내로 적어주세요"
-          type="text"
-          required
-          ref={inputRef}
-        />
-        <button
-          className="py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm"
-          onClick={handleClick}
-        >
-          전송
-        </button>
-      </div> */}
     </div>
   );
 }
