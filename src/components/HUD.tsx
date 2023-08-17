@@ -1,4 +1,3 @@
-import useGameDataStore from "@/stores/useGameDataStore";
 import Image from "next/image";
 import HealthBar from "./HealthBar";
 import { useState } from "react";
@@ -7,13 +6,13 @@ import InfoModal from "./ui/InfoModal";
 import DetailAttribute from "./DetailAttribute";
 import DetailItems from "./DetailItems";
 import useUIStore from "@/stores/useUIStore";
+import { useGameDataStore } from "@/stores/useGameDataStore";
 
 export default function HUD() {
   const [openModal, setOpenModal] = useState(false);
   const [select, setSelect] = useState<string>("");
-  const { hp, currentFloor, maxFloor, attribute } = useGameDataStore();
+  const { gameData } = useGameDataStore();
   const { isMobile, menuToggled, setMenuToggled } = useUIStore();
-  const maxHP = attribute.maxHP;
 
   const toggleBtnSize = 16;
   const mobileIconSize = 30;
@@ -24,14 +23,14 @@ export default function HUD() {
 
   return (
     <section className="w-full text-base sm:w-48 " onClick={handleToggle}>
-      <HealthBar maxHP={maxHP} currentHP={hp} />
+      <HealthBar maxHP={gameData.attribute.maxHP} currentHP={gameData.hp} />
       <div className="flex flex-col items-center">
         <div
           className="flex items-center justify-center font-bold my-1"
           onClick={handleToggle}
         >
           <p className="text-xs sm:text-xl">
-            보스까지 {maxFloor - currentFloor + 1}턴 남음!
+            보스까지 {gameData.maxFloor - gameData.currentFloor + 1}턴 남음!
           </p>
           {menuToggled && (
             <Image
