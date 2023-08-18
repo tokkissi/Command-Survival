@@ -12,6 +12,7 @@ import { useGameDataStore } from "@/stores/useGameDataStore";
 // 쿠키, 로컬스토리지 등은 데이터 삭제 위험이 있으므로 db에 저장함
 export default function GameInterface() {
   const [loadCheck, setLoadCheck] = useState(false); // 처음하기 랜더링 여부
+  const [isFirstStart, setIsFirstStart] = useState(false);
 
   const { gameData, setGameData } = useGameDataStore();
   const { data: session } = useSession();
@@ -65,6 +66,7 @@ export default function GameInterface() {
               onClick={() => {
                 setGameData(fetchedSaveData);
                 setLoadCheck(true);
+                setIsFirstStart(false);
               }}
             >
               이어서 하기
@@ -76,6 +78,7 @@ export default function GameInterface() {
             className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
             onClick={() => {
               setLoadCheck(true);
+              setIsFirstStart(true);
             }}
           >
             처음부터 하기
@@ -88,7 +91,7 @@ export default function GameInterface() {
   return (
     <div className="relative rounded overflow-hidden max-w-5xl w-full h-full flex flex-col sm:flex-row">
       <GameSideBar />
-      <Console />
+      <Console isFirstStart={isFirstStart} />
     </div>
   );
 }

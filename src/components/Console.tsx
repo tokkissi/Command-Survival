@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import useUIStore from "@/stores/useUIStore";
-import { formatGptResponse } from "@/util/gptResponseFommatter";
 import TextBubble from "./ui/conversation/TextBubble";
 import { useMutation } from "@tanstack/react-query";
 import { askAIWithUserInput } from "@/service/conversation";
+import { startSystemPrompt } from "@/Prompt_libaray/startPrompt";
+import { useGameDataStore } from "@/stores/useGameDataStore";
 
-export default function Console() {
+export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [conversationHistory, setConversationHistory] = useState<
     {
@@ -16,14 +17,45 @@ export default function Console() {
     }[]
   >([]);
   const { isMobile } = useUIStore();
+  const { setGameData } = useGameDataStore();
   const flexiblePadding = isMobile ? "" : "p-4";
   const flexibleFontSize = isMobile ? "text-sm" : "text-base";
 
   const mutation = useMutation(askAIWithUserInput, {
     onSuccess: (res) => {
+      // 초기 응답 형식에 맞지 않아 parsing 하지 못할 때, 사용할 기본값
+      const defaultAtk = parseInt(process.env.NEXT_PUBLIC_DEFAULT_ATK!);
+      const defaultDef = parseInt(process.env.NEXT_PUBLIC_DEFAULT_DEF!);
+      const defaultMaxHP = parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAXHP!);
+      const defaultItems = process.env.NEXT_PUBLIC_DEFAULT_ITEMS;
+
+      // 형식에 맞으면 parsing하여 추출해서 각데이터를 전역 상수로 세팅.
+      // 형식에 맞지 않으면 기본값을 세팅
+      if (isFirstStart) {
+        const atk = parseInt(res.match(/ATK:\s*(\d+)/)?.[1] || defaultAtk);
+        const def = parseInt(res.match(/DEF:\s*(\d+)/)?.[1] || defaultDef);
+        const maxhp = parseInt(
+          res.match(/maxHP:\s*(\d+)/)?.[1] || defaultMaxHP
+        );
+        const itemsMatch = res.match(/소지품:\s*\[(.*?)\]/);
+
+        const items = itemsMatch ? itemsMatch[1] : defaultItems;
+        setGameData({
+          attribute: {
+            ATK: atk,
+            DEF: def,
+            maxHP: maxhp,
+          },
+          items: items,
+          hp: maxhp,
+          maxFloor: Number(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR),
+          currentFloor: 1,
+        });
+      }
+
       setConversationHistory((preHistory) => [
         ...preHistory.slice(0, preHistory.length - 1),
-        { role: "assistant", text: formatGptResponse(res) },
+        { role: "assistant", text: res },
       ]);
     },
     onError: (error) => {
@@ -37,6 +69,19 @@ export default function Console() {
       ]);
     },
   });
+
+  useEffect(() => {
+    if (isFirstStart) {
+      setConversationHistory((preHistory) => [
+        { role: "assistant", text: "세계관 설정 중..." },
+      ]);
+      mutation.mutate({
+        prompt: startSystemPrompt,
+        conversation: [],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFirstStart]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
