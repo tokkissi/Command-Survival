@@ -4,7 +4,7 @@ export const askAIWithUserInput = async (userInput: {
   prompt: string;
   conversation: {
     text: string;
-    role: "user" | "assistant";
+    role: "user" | "assistant" | "system";
   }[];
 }) => {
   const response = await axios.post("/api/play", userInput);

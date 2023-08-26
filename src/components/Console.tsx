@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { askAIWithUserInput } from "@/service/conversation";
 import { startSystemPrompt } from "@/Prompt_libaray/startPrompt";
 import { useGameDataStore } from "@/stores/useGameDataStore";
+import { normalEventPrompt } from "@/Prompt_libaray/normalEventPrompt";
 
 export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +101,10 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
 
     mutation.mutate({
       prompt: userInputAsk,
-      conversation: conversationHistory.slice(-4),
+      conversation: [
+        ...conversationHistory.slice(-4),
+        { role: "system", text: normalEventPrompt },
+      ],
     });
   };
 
