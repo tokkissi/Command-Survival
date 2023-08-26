@@ -52,7 +52,7 @@ export default function HUD() {
           )}
         </div>
 
-        {isMobile && menuToggled && (
+        {((isMobile && menuToggled) || !isMobile) && (
           <div className="flex items-center">
             <div
               className="hover:cursor-pointer hover:opacity-60"
