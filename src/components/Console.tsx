@@ -120,6 +120,26 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
       // 전투 로그와 GPT API 응답을 합침
       const combinedResponse = `${battleLog}\n\n${res}`;
 
+      // 전투 후 남은 체력 응답에서 추출
+      const remainingHpMatch = battleLog.match(/남은 체력:\s*(\d+)/);
+
+      if (remainingHpMatch) {
+        const remainingHp = parseInt(remainingHpMatch[1]);
+        // 승리 시 gameData의 hp 갱신
+        if (!battleLog.includes("전투 패배!")) {
+          setGameData((prevData) => ({
+            ...prevData,
+            hp: remainingHp,
+          }));
+        } else {
+          // 패배 시, hp를 0로 갱신
+          setGameData((prevData) => ({
+            ...prevData,
+            hp: 0,
+          }));
+        }
+      }
+
       setConversationHistory((preHistory) => [
         ...preHistory.slice(0, preHistory.length - 1),
         { role: "assistant", text: combinedResponse },
