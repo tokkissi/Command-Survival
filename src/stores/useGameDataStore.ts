@@ -17,7 +17,7 @@ type SetGameData = (
 type GameStore = {
   gameData: GameData;
   setGameData: SetGameData;
-  incrementFloor: () => void;
+  incrementFloor: () => number;
 };
 
 export const useGameDataStore = create<GameStore>()(
@@ -27,8 +27,8 @@ export const useGameDataStore = create<GameStore>()(
         attribute: { ATK: 0, DEF: 0, maxHP: 10 },
         items: [],
         hp: 0,
-        maxFloor: 0,
-        currentFloor: 0,
+        maxFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!),
+        currentFloor: 9,
       },
       setGameData: (data: GameData | ((prevData: GameData) => GameData)) => {
         if (typeof data === "function") {
@@ -39,8 +39,9 @@ export const useGameDataStore = create<GameStore>()(
       },
       incrementFloor: () => {
         console.log("incrementFloor is called");
+        let newFloor = 0;
         set((prevState) => {
-          const newFloor = prevState.gameData.currentFloor + 1;
+          newFloor = prevState.gameData.currentFloor + 1;
           return {
             gameData: {
               ...prevState.gameData,
@@ -48,6 +49,7 @@ export const useGameDataStore = create<GameStore>()(
             },
           };
         });
+        return newFloor;
       },
     }),
     { store: "GameDataStore" }

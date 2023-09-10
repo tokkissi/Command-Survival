@@ -46,6 +46,9 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
 
   const mutation = useMutation(askAIWithUserInput, {
     onSuccess: (res) => {
+      console.log("요청 성공 시 현재 층 확인: ", gameData.currentFloor);
+      console.log("요청 성공 시 최대 층 확인: ", gameData.maxFloor);
+
       // 초기 응답 형식에 맞지 않아 parsing 하지 못할 때, 사용할 기본값
       const defaultAtk = parseInt(process.env.NEXT_PUBLIC_DEFAULT_ATK!);
       const defaultDef = parseInt(process.env.NEXT_PUBLIC_DEFAULT_DEF!);
@@ -89,38 +92,20 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
         });
       }
 
-      // 전투 로그 생성
-      const battleStats = {
+      const battleInfo = {
         ATK: gameData.attribute.ATK,
         DEF: gameData.attribute.DEF,
         hp: gameData.hp,
+        currentFloor: gameData.currentFloor,
       };
       let battleLog = "";
 
       if (gameData.currentFloor !== 0 && gameData.currentFloor % 5 === 0) {
-        battleLog = battlePrompt(battleStats);
+        battleLog = battlePrompt(battleInfo);
       }
 
-      // 패배 조건을 확인
-      const isDefeated = battleLog.includes("전투 패배!");
-
-      if (isDefeated) {
-        setConversationHistory((preHistory) => [
-          ...preHistory.slice(0, preHistory.length - 1),
-          { role: "assistant", text: battleLog },
-        ]);
-
-        // 2초 후에 handleBattleDefeat 실행
-        setTimeout(() => {
-          handleBattleDefeat();
-        }, 1500);
-        return;
-      }
-
-      // 전투 로그와 GPT API 응답을 합침
       const combinedResponse = `${battleLog}\n\n${res}`;
 
-      // 전투 후 남은 체력 응답에서 추출
       const remainingHpMatch = battleLog.match(/남은 체력:\s*(\d+)/);
 
       if (remainingHpMatch) {
@@ -132,7 +117,7 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
             hp: remainingHp,
           }));
         } else {
-          // 패배 시, hp를 0로 갱신
+          // 패배 시, gameData의 hp를 0로 갱신
           setGameData((prevData) => ({
             ...prevData,
             hp: 0,
@@ -184,26 +169,96 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
 
     const userInputAsk = inputRef.current.value;
 
-    setConversationHistory((preHistory) => [
-      ...preHistory,
-      { role: "user", text: userInputAsk },
-      { role: "assistant", text: "로딩 중..." },
-    ]);
-    inputRef.current!.value = "";
+    const maxFloor = parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!);
+    let newFloor = 0;
 
-    let systemContent = "";
-
+    // 입력 시 층 증가
     if (shouldIncrementFloor) {
-      incrementFloor();
+      newFloor = incrementFloor();
+      console.log("증가된 뉴 플로어", newFloor);
     }
 
-    mutation.mutate({
-      prompt: userInputAsk,
-      conversation: [
-        ...conversationHistory.slice(-4),
-        { role: "system", text: systemContent },
-      ],
-    });
+    // 마지막 층 도달 시 보스 전투
+    if (newFloor === maxFloor) {
+      let battleLog = battlePrompt({
+        ATK: gameData.attribute.ATK,
+        DEF: gameData.attribute.DEF,
+        hp: gameData.hp,
+        currentFloor: newFloor,
+      });
+
+      // 패배 조건을 확인
+      const isDefeated = battleLog.includes("전투 패배!");
+
+      // 패배 로그 또는 승리 로그 랜더링
+      setConversationHistory((preHistory) => [
+        ...preHistory,
+        { role: "assistant", text: battleLog },
+      ]);
+
+      // 패배 또는 승리에 따른 후속 처리
+      setTimeout(() => {
+        if (isDefeated) {
+          handleBattleDefeat();
+        } else {
+          handleVictory();
+        }
+      }, 1500);
+
+      // 10층에서는 이후 API 호출을 하지 않도록 함수 종료
+      return;
+    }
+    // 5의 배수로 전투 로그가 발생하지만 마지막 층이 아닌 경우 승리 시 일반 이벤트 api 요청 필요
+    else if (newFloor % 5 === 0 && newFloor !== maxFloor) {
+      let battleLog = battlePrompt({
+        ATK: gameData.attribute.ATK,
+        DEF: gameData.attribute.DEF,
+        hp: gameData.hp,
+        currentFloor: newFloor,
+      });
+
+      const isDefeated = battleLog.includes("전투 패배!");
+
+      if (isDefeated) {
+        setConversationHistory((preHistory) => [
+          ...preHistory,
+          { role: "assistant", text: battleLog },
+        ]);
+
+        setTimeout(() => {
+          handleBattleDefeat();
+        }, 1500);
+        return;
+      } else {
+        setConversationHistory((preHistory) => [
+          ...preHistory,
+          { role: "assistant", text: battleLog },
+        ]);
+        // 승리 시, handleVictory는 실행하지 않고, API 호출
+        mutation.mutate({
+          prompt: normalEventPrompt,
+          conversation: [...conversationHistory],
+        });
+        return;
+      }
+    } else {
+      setConversationHistory((preHistory) => [
+        ...preHistory,
+        { role: "user", text: userInputAsk },
+        { role: "assistant", text: "로딩 중..." },
+      ]);
+      inputRef.current!.value = "";
+
+      let systemContent = "";
+
+      mutation.mutate({
+        prompt: userInputAsk,
+        conversation: [
+          ...conversationHistory.slice(-4),
+          { role: "system", text: systemContent },
+        ],
+      });
+    }
   };
 
   const handleVictory = () => {
