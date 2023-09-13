@@ -1,6 +1,5 @@
 import { TextBubbleProps } from "@/model/gameData";
 import useUIStore from "@/stores/useUIStore";
-import { type } from "os";
 import AIAvatar from "./AIAvatar";
 import { PulseLoader } from "react-spinners";
 
@@ -8,9 +7,12 @@ export default function TextBubble({
   role,
   isLoading = false,
   text,
+  onClick,
+  isSpecial,
 }: TextBubbleProps) {
   const { isMobile } = useUIStore();
   const flexibleMargin = isMobile ? "" : "ml-6";
+  const textColor = isSpecial ? "font-bold text-amber-500" : "text-black";
 
   if (role === "user") {
     return (
@@ -53,7 +55,8 @@ export default function TextBubble({
             dangerouslySetInnerHTML={{ __html: text }}
             className={`speech-bubble-ai ${
               role === "assistant" ? flexibleMargin : ""
-            }`}
+            } ${textColor}`}
+            onClick={onClick}
           />
         </>
       )}

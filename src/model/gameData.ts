@@ -21,5 +21,7 @@ export type Attribute = {
 export type TextBubbleProps = {
   text: string;
   role: "user" | "assistant";
-  isLoading: boolean;
+  isLoading?: boolean;
+  onClick?: () => void;
+  isSpecial?: boolean;
 };

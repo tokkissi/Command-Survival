@@ -14,13 +14,17 @@ import InfoModal from "./ui/InfoModal";
 import DetailEndding from "./DetailEndding";
 import { battlePrompt } from "@/Prompt_libaray/battlePrompt";
 
+type ConversationHistoryType = {
+  text: string;
+  role: "user" | "assistant";
+  onClick?: () => void;
+  isSpecial?: boolean;
+};
+
 export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [conversationHistory, setConversationHistory] = useState<
-    {
-      text: string;
-      role: "user" | "assistant";
-    }[]
+    ConversationHistoryType[]
   >([]);
   const { isMobile } = useUIStore();
   const { setGameData, gameData, incrementFloor } = useGameDataStore();
@@ -102,6 +106,14 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
 
       if (gameData.currentFloor !== 0 && gameData.currentFloor % 5 === 0) {
         battleLog = battlePrompt(battleInfo);
+        if (!checkChoiceFormat(res)) {
+          console.log("전투 승리 후 선택지 불량. 재요청함");
+          mutation.mutate({
+            prompt: normalEventPrompt,
+            conversation: [...conversationHistory],
+          });
+          return;
+        }
       }
 
       const combinedResponse = `${battleLog}\n\n${res}`;
@@ -179,37 +191,10 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
     }
 
     // 마지막 층 도달 시 보스 전투
-    if (newFloor === maxFloor) {
-      let battleLog = battlePrompt({
-        ATK: gameData.attribute.ATK,
-        DEF: gameData.attribute.DEF,
-        hp: gameData.hp,
-        currentFloor: newFloor,
-      });
-
-      // 패배 조건을 확인
-      const isDefeated = battleLog.includes("전투 패배!");
-
-      // 패배 로그 또는 승리 로그 랜더링
-      setConversationHistory((preHistory) => [
-        ...preHistory,
-        { role: "assistant", text: battleLog },
-      ]);
-
-      // 패배 또는 승리에 따른 후속 처리
-      setTimeout(() => {
-        if (isDefeated) {
-          handleBattleDefeat();
-        } else {
-          handleVictory();
-        }
-      }, 1500);
-
-      // 10층에서는 이후 API 호출을 하지 않도록 함수 종료
-      return;
-    }
-    // 5의 배수로 전투 로그가 발생하지만 마지막 층이 아닌 경우 승리 시 일반 이벤트 api 요청 필요
-    else if (newFloor % 5 === 0 && newFloor !== maxFloor) {
+    if (
+      newFloor === maxFloor ||
+      (newFloor % 5 === 0 && newFloor !== maxFloor)
+    ) {
       let battleLog = battlePrompt({
         ATK: gameData.attribute.ATK,
         DEF: gameData.attribute.DEF,
@@ -220,27 +205,20 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
       const isDefeated = battleLog.includes("전투 패배!");
 
       if (isDefeated) {
-        setConversationHistory((preHistory) => [
-          ...preHistory,
-          { role: "assistant", text: battleLog },
-        ]);
-
-        setTimeout(() => {
-          handleBattleDefeat();
-        }, 1500);
-        return;
+        addBattleLogAndAction(battleLog, handleBattleDefeat, true);
       } else {
-        setConversationHistory((preHistory) => [
-          ...preHistory,
-          { role: "assistant", text: battleLog },
-        ]);
-        // 승리 시, handleVictory는 실행하지 않고, API 호출
-        mutation.mutate({
-          prompt: normalEventPrompt,
-          conversation: [...conversationHistory],
-        });
-        return;
+        if (newFloor === maxFloor) {
+          addBattleLogAndAction(battleLog, handleVictory, true);
+        } else {
+          addBattleLogAndAction(battleLog, () => {}, false);
+          mutation.mutate({
+            prompt: normalEventPrompt,
+            conversation: [...conversationHistory],
+          });
+        }
       }
+
+      return;
     } else {
       setConversationHistory((preHistory) => [
         ...preHistory,
@@ -270,9 +248,33 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   };
 
   const handleBattleDefeat = () => {
-    // 모달로 패배 이미지 보여주고, 타이틀로 리다이렉트
+    // 모달로 패배 이미지 보여주고, 타이틀로sssssss 리다이렉트
     setIsVictory(false);
     setShowModal(true);
+  };
+
+  const addBattleLogAndAction = (
+    battleLog: string,
+    action: () => void,
+    isSpecial: boolean = false
+  ) => {
+    setConversationHistory((preHistory: ConversationHistoryType[]) => {
+      const newHistory: ConversationHistoryType[] = [
+        ...preHistory,
+        { role: "assistant", text: battleLog },
+      ];
+
+      // isSpecial 일 경우만 특수한 버블 추가
+      if (isSpecial) {
+        newHistory.push({
+          role: "assistant",
+          text: "여기를 눌러서 이세계에서 탈출하기! 👈",
+          onClick: action,
+          isSpecial: true,
+        });
+      }
+      return newHistory;
+    });
   };
 
   return (
@@ -293,6 +295,8 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
             isLoading={
               mutation.isLoading && index === conversationHistory.length - 1
             }
+            onClick={message.onClick}
+            isSpecial={message.isSpecial}
             key={index}
           />
         ))}
