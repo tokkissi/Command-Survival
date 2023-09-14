@@ -26,7 +26,7 @@ export async function callChatGPT({
     const response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: messages,
-      max_tokens: 1000,
+      max_tokens: 500,
     });
 
     return response.data.choices[0].message;
