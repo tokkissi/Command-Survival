@@ -7,6 +7,8 @@ import { useLoadSaveData } from "@/hooks/useLoadSaveData";
 import Image from "next/image";
 import GameSideBar from "./GameSideBar";
 import { useGameDataStore } from "@/stores/useGameDataStore";
+import { useLoadUserData } from "@/hooks/useLoadUserData";
+import { useUserData } from "@/stores/useUserData";
 
 // 세이브 데이터 가져오기. 첫 시작 유무 확인용
 // 쿠키, 로컬스토리지 등은 데이터 삭제 위험이 있으므로 db에 저장함
@@ -18,19 +20,28 @@ export default function GameInterface() {
   const { data: session } = useSession();
   const email = session?.user?.email!;
 
+  const { setUserData } = useUserData();
+
   const {
     data: fetchedSaveData,
-    isLoading,
-    isError,
-    error,
+    isLoading: isLoadingSaveData,
+    isError: isErrorSaveData,
+    error: errorSaveData,
   } = useLoadSaveData(email);
 
-  if (isLoading) {
+  const {
+    data: fetchedUserData,
+    isLoading: isLoadingUserData,
+    isError: isErrorUserData,
+    error: errorUserData,
+  } = useLoadUserData(email);
+
+  if (isLoadingSaveData) {
     return <div>Loading...</div>;
   }
 
-  if (isError) {
-    const err = error as Error;
+  if (isErrorSaveData) {
+    const err = errorSaveData as Error;
     console.log(err);
     const statusCode = parseInt(err.message.split(":")[1].trim());
     switch (statusCode) {
@@ -44,8 +55,29 @@ export default function GameInterface() {
         return <div>예상치 못한 에러가 발생했습니다</div>;
     }
   }
+
   if (!fetchedSaveData) {
     return <div>세이브 데이터가 없습니다</div>;
+  }
+
+  if (isLoadingUserData) {
+    return <div>유저 데이터 로딩 중</div>;
+  }
+
+  if (isErrorUserData) {
+    const err = errorUserData as Error;
+    console.log(err);
+    const statusCode = parseInt(err.message.split(":")[1].trim());
+    switch (statusCode) {
+      case 401:
+        return <div>로그인 후 실행 바랍니다</div>;
+
+      case 500:
+        return <div>서버 에러가 발생했습니다</div>;
+
+      default:
+        return <div>예상치 못한 에러가 발생했습니다</div>;
+    }
   }
 
   if (!loadCheck) {
@@ -65,6 +97,7 @@ export default function GameInterface() {
               className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
               onClick={() => {
                 setGameData(fetchedSaveData);
+                setUserData(fetchedUserData);
                 setLoadCheck(true);
                 setIsFirstStart(false);
               }}
@@ -77,6 +110,7 @@ export default function GameInterface() {
           <span
             className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
             onClick={() => {
+              setUserData(fetchedUserData);
               setLoadCheck(true);
               setIsFirstStart(true);
             }}
