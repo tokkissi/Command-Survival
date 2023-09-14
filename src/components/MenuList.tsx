@@ -1,9 +1,10 @@
 import { useSession } from "next-auth/react";
 import Avatar from "./Avatar";
 import useUIStore from "@/stores/useUIStore";
+import { useUserData } from "@/stores/useUserData";
 
 export default function MenuList() {
-  const coupon = 1;
+  const { userData } = useUserData();
   const { data: session } = useSession();
   const userImage = session?.user?.image;
   const fullEmail = session?.user?.email;
@@ -32,7 +33,8 @@ export default function MenuList() {
 
       <div className="text-sm text-center mb-2">
         <p className="mb-2">
-          Ai 이미지 쿠폰 <span className="text-blue-600">{coupon}</span>개
+          Ai 이미지 쿠폰{" "}
+          <span className="text-blue-600">{userData.coupon}</span>개
         </p>
         <p className="text-xs text-gray-600 mb-2">(게임 클리어시 쿠폰 +1)</p>
       </div>
