@@ -16,7 +16,7 @@ export default function GameInterface() {
   const [loadCheck, setLoadCheck] = useState(false); // 처음하기 랜더링 여부
   const [isFirstStart, setIsFirstStart] = useState(false);
 
-  const { gameData, setGameData } = useGameDataStore();
+  const { gameData, setGameData, resetGameData } = useGameDataStore();
   const { data: session } = useSession();
   const email = session?.user?.email!;
 
@@ -110,6 +110,7 @@ export default function GameInterface() {
           <span
             className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
             onClick={() => {
+              resetGameData();
               setUserData(fetchedUserData);
               setLoadCheck(true);
               setIsFirstStart(true);

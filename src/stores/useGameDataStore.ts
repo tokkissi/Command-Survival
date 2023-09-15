@@ -18,18 +18,21 @@ type GameStore = {
   gameData: GameData;
   setGameData: SetGameData;
   incrementFloor: () => number;
+  resetGameData: () => void;
+};
+
+const defaultGameData = {
+  attribute: { ATK: 0, DEF: 0, maxHP: 10 },
+  items: [],
+  hp: 0,
+  maxFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!),
+  currentFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_START_FLOOR!),
 };
 
 export const useGameDataStore = create<GameStore>()(
   devtools(
     (set) => ({
-      gameData: {
-        attribute: { ATK: 0, DEF: 0, maxHP: 10 },
-        items: [],
-        hp: 0,
-        maxFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!),
-        currentFloor: 9,
-      },
+      gameData: defaultGameData,
       setGameData: (data: GameData | ((prevData: GameData) => GameData)) => {
         if (typeof data === "function") {
           set((prevState) => ({ gameData: data(prevState.gameData) }));
@@ -50,6 +53,11 @@ export const useGameDataStore = create<GameStore>()(
           };
         });
         return newFloor;
+      },
+      resetGameData: () => {
+        set({
+          gameData: defaultGameData,
+        });
       },
     }),
     { store: "GameDataStore" }
