@@ -13,6 +13,7 @@ import ModalPortal from "./ui/ModalPortal";
 import InfoModal from "./ui/InfoModal";
 import DetailEndding from "./DetailEndding";
 import { battlePrompt } from "@/Prompt_libaray/battlePrompt";
+import { updateUserCoupon } from "@/service/userService";
 
 type ConversationHistoryType = {
   text: string;
@@ -34,6 +35,8 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
 
   const flexiblePadding = isMobile ? "" : "p-4";
   const flexibleFontSize = isMobile ? "text-sm" : "text-base";
+
+  const { incrementCoupon } = useUserData();
 
   const checkChoiceFormat = (text: string): boolean => {
     // 1. 선택지 1
@@ -154,8 +157,6 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
     },
   });
 
-  const { incrementCoupon } = useUserData();
-
   useEffect(() => {
     if (isFirstStart) {
       setConversationHistory((preHistory) => [
@@ -239,12 +240,28 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
     }
   };
 
-  const handleVictory = () => {
+  const handleVictory = async () => {
     // 모달로 승리 이미지 보여주고, 유저 쿠폰 수 +1 해주고 보여준 뒤, 타이틀로 리다이렉트
-    incrementCoupon();
+    console.log("승리 함수 실행");
 
-    setIsVictory(true);
-    setShowModal(true);
+    try {
+      // 현재 쿠폰 수 가져오기
+      const currentCoupon = useUserData.getState().userData.coupon;
+
+      // API 호출을 통해 쿠폰 수를 1 증가시키고 결과를 받음
+      const updateCouponResponse = await updateUserCoupon(currentCoupon + 1);
+      console.log("쿠폰 업데이트 응답 결과:  ", updateCouponResponse);
+
+      // db에 쿠폰 증가 요청 응답이 정상이라면 store의 전역 상태의 쿠폰 수도 증가 시킴
+      if (updateCouponResponse.status === 200) {
+        incrementCoupon();
+      }
+
+      setIsVictory(true);
+      setShowModal(true);
+    } catch (error) {
+      console.error("쿠폰 업데이트 실패:", error);
+    }
   };
 
   const handleBattleDefeat = () => {
