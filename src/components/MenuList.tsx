@@ -1,7 +1,8 @@
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Avatar from "./Avatar";
 import useUIStore from "@/stores/useUIStore";
 import { useUserData } from "@/stores/useUserData";
+import Link from "next/link";
 
 export default function MenuList() {
   const { userData } = useUserData();
@@ -13,10 +14,6 @@ export default function MenuList() {
   const { menuToggled, isMobile } = useUIStore();
 
   const isMobileMenuFolded = isMobile && !menuToggled ? true : false;
-
-  const handleAiImgGengeration = () => {};
-  const handleGoTitle = () => {};
-  const handleLogout = () => {};
 
   return (
     <section
@@ -40,21 +37,21 @@ export default function MenuList() {
       </div>
 
       <div className="flex flex-col gap-3 items-center justify-center w-full">
-        <button
+        <Link
+          href={"/ai-image-generator"}
           className="w-44 text-base py-1 text-center text-white rounded-lg bg-gray-600 shadow-xl hover:cursor-pointer hover:opacity-70 hover:bg-white hover:text-gray-800"
-          onClick={handleAiImgGengeration}
         >
           Ai 이미지 생성
-        </button>
-        <button
+        </Link>
+        <Link
+          href={"/"}
           className="w-44 py-1 text-center text-white rounded-lg hover:cursor-pointer hover:opacity-70 bg-gray-600 shadow-xl hover:bg-white hover:text-gray-800"
-          onClick={handleGoTitle}
         >
           타이틀로 돌아가기
-        </button>
+        </Link>
         <button
           className="w-44  py-1 text-center text-white rounded-lg  bg-gray-600 shadow-xl hover:cursor-pointer hover:opacity-70 hover:bg-white hover:text-gray-800"
-          onClick={handleLogout}
+          onClick={() => signOut({ callbackUrl: "/" })}
         >
           로그아웃
         </button>
