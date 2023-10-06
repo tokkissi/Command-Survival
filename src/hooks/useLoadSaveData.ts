@@ -1,4 +1,5 @@
-import { SaveData } from "@/model/gameData";
+// import { SaveData } from "@/model/gameData";
+import { GameData } from "@/model/gameData";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -21,7 +22,7 @@ function loadSaveDataByEmail(email: string) {
 export const useLoadSaveData = (email: string) => {
   return useQuery({
     queryKey: ["saveData", email, "load"],
-    queryFn: (): Promise<SaveData> => loadSaveDataByEmail(email),
+    queryFn: (): Promise<GameData> => loadSaveDataByEmail(email),
     staleTime: 0,
   });
 };

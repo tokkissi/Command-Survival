@@ -17,20 +17,29 @@ export default function HUD() {
   const toggleBtnSize = 16;
   const mobileIconSize = 30;
 
+  console.log("HUD 에서 꺼낸 게임 데이터 : ", gameData);
+
   const handleToggle = () => {
     setMenuToggled(!menuToggled);
   };
 
   return (
     <section className="w-full text-base sm:w-48 " onClick={handleToggle}>
-      <HealthBar maxHP={gameData.attribute.maxHP} currentHP={gameData.hp} />
+      <HealthBar
+        maxHP={gameData.gameState ? gameData.gameState.attribute.maxHP : 10}
+        currentHP={gameData.gameState ? gameData.gameState.hp : 10}
+      />
       <div className="flex flex-col items-center">
         <div
           className="flex items-center justify-center font-bold my-1"
           onClick={handleToggle}
         >
           <p className="text-xs sm:text-xl">
-            보스까지 {gameData.maxFloor - gameData.currentFloor + 1}턴 남음!
+            보스까지{" "}
+            {gameData.gameState
+              ? gameData.gameState.maxFloor - gameData.gameState.currentFloor
+              : process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR}
+            턴 남음!
           </p>
           {menuToggled && (
             <Image

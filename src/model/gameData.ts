@@ -1,15 +1,17 @@
-export type SaveData = {
-  email: string;
-  createdAt: Date;
-  attribute: {
-    ATK: number;
-    DEF: number;
-    maxHP: number;
-  };
-  items: string[];
-  currentFloor: number;
+export type gameState = {
+  attribute: Attribute;
+  items: string;
   hp: number;
   maxFloor: number;
+  currentFloor: number;
+};
+
+export type GameData = {
+  conversationHistory: ConversationHistoryType[];
+  email: string;
+  gameState: gameState;
+  createdAt: Date;
+  _id: string;
 };
 
 export type Attribute = {
@@ -22,6 +24,13 @@ export type TextBubbleProps = {
   text: string;
   role: "user" | "assistant";
   isLoading?: boolean;
+  onClick?: () => void;
+  isSpecial?: boolean;
+};
+
+export type ConversationHistoryType = {
+  text: string;
+  role: "user" | "assistant";
   onClick?: () => void;
   isSpecial?: boolean;
 };

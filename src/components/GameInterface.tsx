@@ -16,7 +16,7 @@ export default function GameInterface() {
   const [loadCheck, setLoadCheck] = useState(false); // 처음하기 랜더링 여부
   const [isFirstStart, setIsFirstStart] = useState(false);
 
-  const { gameData, setGameData, resetGameData } = useGameDataStore();
+  const { setGameData, resetGameData } = useGameDataStore();
   const { data: session } = useSession();
   const email = session?.user?.email!;
 
@@ -36,6 +36,12 @@ export default function GameInterface() {
     error: errorUserData,
   } = useLoadUserData(email);
 
+  console.log("인터페이스에서 받은 세이브데이터 : ", fetchedSaveData);
+
+  const handleFirstStartChange = () => {
+    setIsFirstStart(false);
+  };
+
   if (isLoadingSaveData) {
     return <div>Loading...</div>;
   }
@@ -54,10 +60,6 @@ export default function GameInterface() {
       default:
         return <div>예상치 못한 에러가 발생했습니다</div>;
     }
-  }
-
-  if (!fetchedSaveData) {
-    return <div>세이브 데이터가 없습니다</div>;
   }
 
   if (isLoadingUserData) {
@@ -126,7 +128,10 @@ export default function GameInterface() {
   return (
     <div className="relative rounded overflow-hidden max-w-5xl w-full h-full flex flex-col sm:flex-row">
       <GameSideBar />
-      <Console isFirstStart={isFirstStart} />
+      <Console
+        isFirstStart={isFirstStart}
+        onChangeFirstStart={handleFirstStartChange}
+      />
     </div>
   );
 }

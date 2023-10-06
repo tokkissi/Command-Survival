@@ -1,14 +1,6 @@
-import { Attribute } from "@/model/gameData";
+import { Attribute, GameData } from "@/model/gameData";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-
-type GameData = {
-  attribute: Attribute;
-  items: string[];
-  hp: number;
-  maxFloor: number;
-  currentFloor: number;
-};
 
 type SetGameData = (
   data: GameData | ((prevData: GameData) => GameData)
@@ -22,11 +14,17 @@ type GameStore = {
 };
 
 const defaultGameData = {
-  attribute: { ATK: 0, DEF: 0, maxHP: 10 },
-  items: [],
-  hp: 0,
-  maxFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!),
-  currentFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_START_FLOOR!),
+  conversationHistory: [],
+  email: "",
+  gameState: {
+    attribute: { ATK: 0, DEF: 0, maxHP: 10 },
+    items: "",
+    hp: 0,
+    maxFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!),
+    currentFloor: parseInt(process.env.NEXT_PUBLIC_DEFAULT_START_FLOOR!),
+  },
+  createdAt: new Date(),
+  _id: "",
 };
 
 export const useGameDataStore = create<GameStore>()(
@@ -44,11 +42,14 @@ export const useGameDataStore = create<GameStore>()(
         console.log("incrementFloor is called");
         let newFloor = 0;
         set((prevState) => {
-          newFloor = prevState.gameData.currentFloor + 1;
+          newFloor = prevState.gameData.gameState.currentFloor + 1;
           return {
             gameData: {
               ...prevState.gameData,
-              currentFloor: newFloor,
+              gameState: {
+                ...prevState.gameData.gameState,
+                currentFloor: newFloor,
+              },
             },
           };
         });
