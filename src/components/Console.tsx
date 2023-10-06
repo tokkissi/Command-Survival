@@ -14,15 +14,17 @@ import InfoModal from "./ui/InfoModal";
 import DetailEndding from "./DetailEndding";
 import { battlePrompt } from "@/Prompt_libaray/battlePrompt";
 import { updateUserCoupon } from "@/service/userService";
+import { ConversationHistoryType } from "@/model/gameData";
+import { saveGameDataAndHistory } from "@/service/gameService";
+import { useSession } from "next-auth/react";
 
-type ConversationHistoryType = {
-  text: string;
-  role: "user" | "assistant";
-  onClick?: () => void;
-  isSpecial?: boolean;
-};
-
-export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
+export default function Console({
+  isFirstStart,
+  onChangeFirstStart,
+}: {
+  isFirstStart: boolean;
+  onChangeFirstStart: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [conversationHistory, setConversationHistory] = useState<
     ConversationHistoryType[]
@@ -32,11 +34,25 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [isVictory, setIsVictory] = useState<boolean>(false);
   const [shouldIncrementFloor, setShouldIncrementFloor] = useState(true);
+  const [isGPTResponseReceived, setIsGPTResponseReceived] = useState(false);
+
+  const { data: session } = useSession();
 
   const flexiblePadding = isMobile ? "" : "p-4";
   const flexibleFontSize = isMobile ? "text-sm" : "text-base";
 
   const { incrementCoupon } = useUserData();
+  const { userData } = useUserData();
+
+  console.log("conversationHistory : ", conversationHistory);
+
+  useEffect(() => {
+    console.log("isFirstStart 변경됨: ", isFirstStart);
+  }, [isFirstStart]);
+
+  useEffect(() => {
+    console.log("Console 컴포넌트 재렌더링");
+  });
 
   const checkChoiceFormat = (text: string): boolean => {
     // 1. 선택지 1
@@ -51,10 +67,23 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
     return matches.length >= 1;
   };
 
+  const saveGameDataMutation = useMutation(saveGameDataAndHistory, {
+    onSuccess: (res) => {
+      console.log("저장한 게임 데이터 : ", res);
+      console.log("게임 데이터 저장 성공");
+    },
+    onError: (error) => {
+      console.error("게임 데이터 저장 실패: ", error);
+    },
+  });
+
   const mutation = useMutation(askAIWithUserInput, {
     onSuccess: (res) => {
-      console.log("요청 성공 시 현재 층 확인: ", gameData.currentFloor);
-      console.log("요청 성공 시 최대 층 확인: ", gameData.maxFloor);
+      console.log(
+        "요청 성공 시 현재 층 확인: ",
+        gameData.gameState.currentFloor
+      );
+      console.log("요청 성공 시 최대 층 확인: ", gameData.gameState.maxFloor);
 
       // 초기 응답 형식에 맞지 않아 parsing 하지 못할 때, 사용할 기본값
       const defaultAtk = parseInt(process.env.NEXT_PUBLIC_DEFAULT_ATK!);
@@ -78,6 +107,7 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
       // 형식에 맞으면 parsing하여 추출해서 각데이터를 전역 상수로 세팅.
       // 형식에 맞지 않으면 기본값을 세팅
       if (isFirstStart) {
+        console.log("isFirstStart 시, 문자열 파싱하여 게임 데이터 상태 갱신함");
         const atk = parseInt(res.match(/ATK:\s*(\d+)/)?.[1] || defaultAtk);
         const def = parseInt(res.match(/DEF:\s*(\d+)/)?.[1] || defaultDef);
         const maxhp = parseInt(
@@ -86,29 +116,39 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
         const itemsMatch = res.match(/소지품:\s*\[(.*?)\]/);
 
         const items = itemsMatch ? itemsMatch[1] : defaultItems;
-        setGameData({
-          attribute: {
-            ATK: atk,
-            DEF: def,
-            maxHP: maxhp,
+        setGameData((prevData) => ({
+          ...prevData,
+          email: session?.user?.email!,
+          gameState: {
+            attribute: {
+              ATK: atk,
+              DEF: def,
+              maxHP: maxhp,
+            },
+            items: items,
+            hp: maxhp,
+            maxFloor: Number(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR),
+            currentFloor: prevData.gameState.currentFloor,
           },
-          items: items,
-          hp: maxhp,
-          maxFloor: Number(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR),
-          currentFloor: gameData.currentFloor,
-        });
+        }));
+
+        onChangeFirstStart();
       }
 
       const battleInfo = {
-        ATK: gameData.attribute.ATK,
-        DEF: gameData.attribute.DEF,
-        hp: gameData.hp,
-        currentFloor: gameData.currentFloor,
+        ATK: gameData.gameState.attribute.ATK,
+        DEF: gameData.gameState.attribute.DEF,
+        hp: gameData.gameState.hp,
+        currentFloor: gameData.gameState.currentFloor,
       };
       let battleLog = "";
 
-      if (gameData.currentFloor !== 0 && gameData.currentFloor % 5 === 0) {
+      if (
+        gameData.gameState.currentFloor !== 0 &&
+        gameData.gameState.currentFloor % 5 === 0
+      ) {
         battleLog = battlePrompt(battleInfo);
+
         if (!checkChoiceFormat(res)) {
           console.log("전투 승리 후 선택지 불량. 재요청함");
           mutation.mutate({
@@ -119,31 +159,18 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
         }
       }
 
+      console.log("battleLog 확인:", battleLog);
+
       const combinedResponse = `${battleLog}\n\n${res}`;
 
-      const remainingHpMatch = battleLog.match(/남은 체력:\s*(\d+)/);
-
-      if (remainingHpMatch) {
-        const remainingHp = parseInt(remainingHpMatch[1]);
-        // 승리 시 gameData의 hp 갱신
-        if (!battleLog.includes("전투 패배!")) {
-          setGameData((prevData) => ({
-            ...prevData,
-            hp: remainingHp,
-          }));
-        } else {
-          // 패배 시, gameData의 hp를 0로 갱신
-          setGameData((prevData) => ({
-            ...prevData,
-            hp: 0,
-          }));
-        }
-      }
+      updateGameDataAfterBattle(battleLog);
 
       setConversationHistory((preHistory) => [
         ...preHistory.slice(0, preHistory.length - 1),
         { role: "assistant", text: combinedResponse },
       ]);
+
+      setIsGPTResponseReceived(true);
     },
     onError: (error) => {
       console.error("api call error: ", error);
@@ -171,8 +198,26 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
   }, [isFirstStart]);
 
   useEffect(() => {
-    console.log("층 확인", gameData.currentFloor);
-  }, [gameData.currentFloor]);
+    if (gameData.gameState) {
+      console.log("층 확인", gameData.gameState?.currentFloor);
+    }
+  }, [gameData.gameState]);
+
+  useEffect(() => {
+    // gameData 또는 conversationHistory가 변경되면 DB에 저장
+    if (isGPTResponseReceived) {
+      saveGameDataMutation.mutate({
+        gameData,
+        conversationHistory,
+      });
+      setIsGPTResponseReceived(false); // 초기화
+    }
+  }, [
+    gameData,
+    conversationHistory,
+    saveGameDataMutation,
+    isGPTResponseReceived,
+  ]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,12 +241,19 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
       newFloor === maxFloor ||
       (newFloor % 5 === 0 && newFloor !== maxFloor)
     ) {
+      setConversationHistory((preHistory) => [
+        ...preHistory,
+        { role: "user", text: userInputAsk },
+      ]);
+
       let battleLog = battlePrompt({
-        ATK: gameData.attribute.ATK,
-        DEF: gameData.attribute.DEF,
-        hp: gameData.hp,
+        ATK: gameData.gameState.attribute.ATK,
+        DEF: gameData.gameState.attribute.DEF,
+        hp: gameData.gameState.hp,
         currentFloor: newFloor,
       });
+
+      console.log("배틀로그 생성됨 :", battleLog);
 
       const isDefeated = battleLog.includes("전투 패배!");
 
@@ -209,6 +261,7 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
         addBattleLogAndAction(battleLog, handleBattleDefeat, true);
       } else {
         if (newFloor === maxFloor) {
+          updateGameDataAfterBattle(battleLog);
           addBattleLogAndAction(battleLog, handleVictory, true);
         } else {
           addBattleLogAndAction(battleLog, () => {}, false);
@@ -237,6 +290,34 @@ export default function Console({ isFirstStart }: { isFirstStart: boolean }) {
           { role: "system", text: systemContent },
         ],
       });
+    }
+  };
+
+  const updateGameDataAfterBattle = (battleLog: string) => {
+    const remainingHpMatch = battleLog.match(/남은 체력:\s*(\d+)/);
+    console.log("remainingHpMatch 확인 : ", remainingHpMatch);
+
+    if (remainingHpMatch) {
+      const remainingHp = parseInt(remainingHpMatch[1]);
+      // 승리 시 gameData의 hp 갱신
+      if (!battleLog.includes("전투 패배!")) {
+        setGameData((prevData) => ({
+          ...prevData,
+          gameState: {
+            ...prevData.gameState,
+            hp: remainingHp,
+          },
+        }));
+      } else {
+        // 패배 시, gameData의 hp를 0로 갱신
+        setGameData((prevData) => ({
+          ...prevData,
+          gameState: {
+            ...prevData.gameState,
+            hp: 0,
+          },
+        }));
+      }
     }
   };
 
