@@ -15,7 +15,7 @@ import DetailEndding from "./DetailEndding";
 import { battlePrompt } from "@/Prompt_libaray/battlePrompt";
 import { updateUserCoupon } from "@/service/userService";
 import { ConversationHistoryType } from "@/model/gameData";
-import { saveGameDataAndHistory } from "@/service/gameService";
+import { deleteGameData, saveGameDataAndHistory } from "@/service/gameService";
 import { useSession } from "next-auth/react";
 
 export default function Console({
@@ -241,6 +241,10 @@ export default function Console({
       newFloor === maxFloor ||
       (newFloor % 5 === 0 && newFloor !== maxFloor)
     ) {
+      if (newFloor === maxFloor) {
+        deleteGameData();
+      }
+
       setConversationHistory((preHistory) => [
         ...preHistory,
         { role: "user", text: userInputAsk },

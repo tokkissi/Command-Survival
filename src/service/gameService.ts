@@ -14,3 +14,13 @@ export const saveGameDataAndHistory = async (data: {
     throw new Error(`게임 데이터 및 이력 저장에 실패했습니다: ${error}`);
   }
 };
+
+export const deleteGameData = async () => {
+  try {
+    const response = await axios.delete(`/api/savedata/delete`);
+    console.log("삭제 응답: ", response);
+    return response;
+  } catch (error) {
+    console.log("게임 데이터 삭제 서비스 시 에러");
+  }
+};
