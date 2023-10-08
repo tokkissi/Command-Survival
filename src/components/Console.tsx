@@ -45,6 +45,7 @@ export default function Console({
   const { userData } = useUserData();
 
   console.log("conversationHistory : ", conversationHistory);
+  console.log("console 컴포넌트 내의 gameData : ", gameData);
 
   useEffect(() => {
     console.log("isFirstStart 변경됨: ", isFirstStart);
@@ -218,6 +219,12 @@ export default function Console({
     saveGameDataMutation,
     isGPTResponseReceived,
   ]);
+
+  useEffect(() => {
+    if (!isFirstStart && conversationHistory.length < 1) {
+      setConversationHistory(gameData.conversationHistory);
+    }
+  }, [isFirstStart, conversationHistory, gameData.conversationHistory]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
