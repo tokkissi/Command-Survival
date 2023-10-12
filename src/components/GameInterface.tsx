@@ -9,6 +9,7 @@ import GameSideBar from "./GameSideBar";
 import { useGameDataStore } from "@/stores/useGameDataStore";
 import { useLoadUserData } from "@/hooks/useLoadUserData";
 import { useUserData } from "@/stores/useUserData";
+import { useRouter } from "next/navigation";
 
 // 세이브 데이터 가져오기. 첫 시작 유무 확인용
 // 쿠키, 로컬스토리지 등은 데이터 삭제 위험이 있으므로 db에 저장함
@@ -21,6 +22,7 @@ export default function GameInterface() {
   const email = session?.user?.email!;
 
   const { setUserData } = useUserData();
+  const router = useRouter();
 
   const {
     data: fetchedSaveData,
@@ -119,6 +121,15 @@ export default function GameInterface() {
             }}
           >
             처음부터 하기
+          </span>
+          <span
+            className="hover:text-[#009063] hover:cursor-pointer py-2 px-4"
+            onClick={() => {
+              setUserData(fetchedUserData);
+              router.push("/ai-image-generator");
+            }}
+          >
+            Ai 이미지 생성하기
           </span>
         </div>
       </div>
