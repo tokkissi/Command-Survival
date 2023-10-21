@@ -17,6 +17,7 @@ import { updateUserCoupon } from "@/service/userService";
 import { ConversationHistoryType } from "@/model/gameData";
 import { deleteGameData, saveGameDataAndHistory } from "@/service/gameService";
 import { useSession } from "next-auth/react";
+import useSpeechToText from "@/hooks/useSpeechToText";
 
 export default function Console({
   isFirstStart,
@@ -25,7 +26,7 @@ export default function Console({
   isFirstStart: boolean;
   onChangeFirstStart: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputText, setInputText] = useState<string>("");
   const [conversationHistory, setConversationHistory] = useState<
     ConversationHistoryType[]
   >([]);
@@ -39,10 +40,11 @@ export default function Console({
   const { data: session } = useSession();
 
   const flexiblePadding = isMobile ? "" : "p-4";
-  const flexibleFontSize = isMobile ? "text-sm" : "text-base";
+  const flexibleFontSize = isMobile ? "text-[8px]" : "text-sm";
 
   const { incrementCoupon } = useUserData();
-  const { userData } = useUserData();
+  const { transcript, listening, toggleListening, resetScript, stopListening } =
+    useSpeechToText();
 
   console.log("conversationHistory : ", conversationHistory);
   console.log("console 컴포넌트 내의 gameData : ", gameData);
@@ -54,6 +56,14 @@ export default function Console({
   useEffect(() => {
     console.log("Console 컴포넌트 재렌더링");
   });
+
+  useEffect(() => {
+    console.log("transcript updated: ", transcript);
+  }, [transcript]);
+
+  useEffect(() => {
+    console.log("inputText 업데이트: ", inputText);
+  }, [inputText]);
 
   const checkChoiceFormat = (text: string): boolean => {
     // 1. 선택지 1
@@ -226,82 +236,105 @@ export default function Console({
     }
   }, [isFirstStart, conversationHistory, gameData.conversationHistory]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 언 마운트 시, 음성인식 함수를 클린업 함수로 실행
+  useEffect(() => {
+    const cleanup = async () => {
+      console.log("Cleaning up...");
+      await stopListening();
+      resetScript();
+    };
+
+    // stopListening 이 비동기 함수이므로 return 뒤가 아니라 선언 후 호출
+    cleanup().catch((err) => console.error("Cleanup failed", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 음성인식으로 받은 값을 상태로 설정
+  useEffect(() => {
+    console.log("음성인식으로 받은 값 세팅 useEffect: ", transcript);
+
+    setInputText(transcript);
+  }, [transcript]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (inputRef.current === null) return;
-    if (inputRef.current.value === "") return;
-
-    const userInputAsk = inputRef.current.value;
+    const userInputAsk = inputText;
 
     const maxFloor = parseInt(process.env.NEXT_PUBLIC_DEFAULT_MAX_FLOOR!);
     let newFloor = 0;
 
-    // 입력 시 층 증가
-    if (shouldIncrementFloor) {
-      newFloor = incrementFloor();
-      console.log("증가된 뉴 플로어", newFloor);
-    }
-
-    // 마지막 층 도달 시 보스 전투
-    if (
-      newFloor === maxFloor ||
-      (newFloor % 5 === 0 && newFloor !== maxFloor)
-    ) {
-      if (newFloor === maxFloor) {
-        deleteGameData();
+    // 빈문자열이 아닐 경우만 api 요청
+    if (userInputAsk !== "") {
+      // 입력 시 층 증가
+      if (shouldIncrementFloor) {
+        newFloor = incrementFloor();
+        console.log("증가된 뉴 플로어", newFloor);
       }
 
-      setConversationHistory((preHistory) => [
-        ...preHistory,
-        { role: "user", text: userInputAsk },
-      ]);
-
-      let battleLog = battlePrompt({
-        ATK: gameData.gameState.attribute.ATK,
-        DEF: gameData.gameState.attribute.DEF,
-        hp: gameData.gameState.hp,
-        currentFloor: newFloor,
-      });
-
-      console.log("배틀로그 생성됨 :", battleLog);
-
-      const isDefeated = battleLog.includes("전투 패배!");
-
-      if (isDefeated) {
-        addBattleLogAndAction(battleLog, handleBattleDefeat, true);
-      } else {
+      // 마지막 층 도달 시 보스 전투
+      if (
+        newFloor === maxFloor ||
+        (newFloor % 5 === 0 && newFloor !== maxFloor)
+      ) {
         if (newFloor === maxFloor) {
-          updateGameDataAfterBattle(battleLog);
-          addBattleLogAndAction(battleLog, handleVictory, true);
-        } else {
-          addBattleLogAndAction(battleLog, () => {}, false);
-          mutation.mutate({
-            prompt: normalEventPrompt,
-            conversation: [...conversationHistory],
-          });
+          deleteGameData();
         }
+
+        setConversationHistory((preHistory) => [
+          ...preHistory,
+          { role: "user", text: userInputAsk },
+        ]);
+
+        let battleLog = battlePrompt({
+          ATK: gameData.gameState.attribute.ATK,
+          DEF: gameData.gameState.attribute.DEF,
+          hp: gameData.gameState.hp,
+          currentFloor: newFloor,
+        });
+
+        console.log("배틀로그 생성됨 :", battleLog);
+
+        const isDefeated = battleLog.includes("전투 패배!");
+
+        if (isDefeated) {
+          addBattleLogAndAction(battleLog, handleBattleDefeat, true);
+        } else {
+          if (newFloor === maxFloor) {
+            updateGameDataAfterBattle(battleLog);
+            addBattleLogAndAction(battleLog, handleVictory, true);
+          } else {
+            addBattleLogAndAction(battleLog, () => {}, false);
+            mutation.mutate({
+              prompt: normalEventPrompt,
+              conversation: [...conversationHistory],
+            });
+          }
+        }
+
+        return;
+      } else {
+        setConversationHistory((preHistory) => [
+          ...preHistory,
+          { role: "user", text: userInputAsk },
+          { role: "assistant", text: "로딩 중..." },
+        ]);
+
+        let systemContent = "";
+
+        mutation.mutate({
+          prompt: userInputAsk,
+          conversation: [
+            ...conversationHistory.slice(-4),
+            { role: "system", text: systemContent },
+          ],
+        });
       }
-
-      return;
-    } else {
-      setConversationHistory((preHistory) => [
-        ...preHistory,
-        { role: "user", text: userInputAsk },
-        { role: "assistant", text: "로딩 중..." },
-      ]);
-      inputRef.current!.value = "";
-
-      let systemContent = "";
-
-      mutation.mutate({
-        prompt: userInputAsk,
-        conversation: [
-          ...conversationHistory.slice(-4),
-          { role: "system", text: systemContent },
-        ],
-      });
     }
+
+    // 전송 버튼 클릭 시 음성인식 중단
+    await stopListening();
+    setInputText("");
   };
 
   const updateGameDataAfterBattle = (battleLog: string) => {
@@ -386,16 +419,33 @@ export default function Console({
     });
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
+  };
+
+  const handleVoiceButtonClick = () => {
+    console.log(
+      "handleVoiceButtonClick called. Current listening state: ",
+      listening
+    );
+
+    if (!listening) {
+      resetScript();
+    }
+    toggleListening();
+    console.log("토글 리스닝 실행");
+  };
+
   return (
     <div
-      className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-auto ${flexiblePadding}`}
+      className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-auto ${flexiblePadding} ${flexibleFontSize}`}
     >
       {/* 기존 질문과 답변 데이터 보여주기. 게임 첫 시작 시 고려해서 만들 것 */}
 
       {/* 여백 혹은 질문 쌓일 공간 */}
       <div className="grow"></div>
 
-      <div className={`w-full flex flex-col p-6 gap-6 ${flexibleFontSize}`}>
+      <div className={`w-full flex flex-col p-6 gap-6`}>
         {/* 새로하기를 눌렀을 경우 system 명령어 요청 보내서 답변 받아 랜더링 추가 예정 */}
         {conversationHistory.map((message, index) => (
           <TextBubble
@@ -417,17 +467,30 @@ export default function Console({
       >
         <input
           className="bg-white w-full px-2 border outline-gray-600"
-          placeholder="다음에 할 행동을 30자 이내로 적어주세요"
+          placeholder="다음에 할 행동을 적어주세요(음성은 영어만 가능)"
           type="text"
+          value={inputText}
           required
-          ref={inputRef}
+          onChange={handleInputChange}
         />
-        <button
-          className="py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm"
-          type="submit"
-        >
-          전송
-        </button>
+        <div className="relative">
+          <button
+            className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 border-2 border-gray-300 shadow-sm hover:cursor-pointer hover:bg-gray-300" // 오른쪽과 위에 위치
+            type="button"
+            onClick={handleVoiceButtonClick}
+          >
+            {listening ? "🛑" : "🎤"}
+          </button>
+          <button
+            className={`py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm ${
+              mutation.isLoading && "bg-gray-400"
+            }`}
+            type="submit"
+            disabled={mutation.isLoading}
+          >
+            {mutation.isLoading ? "전송 중" : "전송"}
+          </button>
+        </div>
       </form>
 
       {showModal && (
