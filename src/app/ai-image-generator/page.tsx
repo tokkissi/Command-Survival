@@ -36,11 +36,17 @@ export default function AiGeneratorPage() {
     },
   });
 
-  // 언 마운트 시, 음성인식 함수를 클린업 함수로 실행
+  // 언 마운트 시, 음성인식 값을 초기화하고 음성인식 함수를 클린업 함수로 실행
   useEffect(() => {
-    return () => {
-      stopListening();
+    const cleanup = async () => {
+      console.log("Cleaning up...");
+      await stopListening();
+      resetScript();
     };
+
+    // stopListening 이 비동기 함수이므로 return 뒤가 아니라 선언 후 호출
+    cleanup().catch((err) => console.error("Cleanup failed", err));
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -73,7 +79,7 @@ export default function AiGeneratorPage() {
       }
     }
 
-    stopListening();
+    await stopListening();
   };
 
   const handleSubmitButtonClick = () => {
