@@ -70,12 +70,24 @@ export default function Console({
     // 2. 선택지 2
     // 3. 선택지 3
     // 위와 같은 형식을 가진 문자열이라고 가정
-    const regex = /\d\.\s+.+/g;
-    const matches = text.match(regex);
-    if (matches === null) {
+
+    console.log("받은 응답 이벤트 내용: ", text);
+
+    // <br /> 태그를 '\n'으로 치환
+    const replacedText = text.replace(/<br \/>/g, "\n");
+
+    // 줄바꿈 문자를 기준으로 텍스트를 분리
+    const lines = replacedText.split("\n");
+
+    // 선택지가 있는 라인만 필터링
+    const choiceLines = lines.filter((line) => /\d\.\s+.+/.test(line));
+
+    // 선택지가 3개 이하인지 확인
+    if (choiceLines.length < 3) {
       return false;
     }
-    return matches.length >= 1;
+
+    return true;
   };
 
   const saveGameDataMutation = useMutation(saveGameDataAndHistory, {
