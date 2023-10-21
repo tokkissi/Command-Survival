@@ -1,6 +1,7 @@
 "use client";
 
 import MenuList from "@/components/MenuList";
+import useSpeechToText from "@/hooks/useSpeechToText";
 import { generateImageWithUserInput } from "@/service/imageService";
 import { updateUserCoupon } from "@/service/userService";
 import useUIStore from "@/stores/useUIStore";
@@ -8,19 +9,21 @@ import { useUserData } from "@/stores/useUserData";
 import { useMutation } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PulseLoader } from "react-spinners";
 
 export default function AiGeneratorPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [prevPrompt, setPrevPrompt] = useState<string>("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputText, setInputText] = useState<string>(""); // useState로 상태 관리
   const [couponTextColor, setCouponTextColor] = useState("text-red-600");
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null); // settimeout 초기화를 위한 타임아웃 id 저장
   const router = useRouter();
 
   const { isMobile } = useUIStore();
   const { userData, decrementCoupon } = useUserData();
+  const { transcript, listening, toggleListening, resetScript, stopListening } =
+    useSpeechToText();
 
   const flexiblePadding = isMobile ? "" : "p-4";
   const flexibleFontSize = isMobile ? "text-[8px]" : "text-sm";
@@ -29,23 +32,33 @@ export default function AiGeneratorPage() {
   const mutation = useMutation(generateImageWithUserInput, {
     onSuccess: (data: string) => {
       setImageUrl(data);
+      resetScript();
     },
   });
+
+  // 언 마운트 시, 음성인식 함수를 클린업 함수로 실행
+  useEffect(() => {
+    return () => {
+      stopListening();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 음성인식으로 받은 값을 상태로 설정
+  useEffect(() => {
+    setInputText(transcript);
+  }, [transcript]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isInputEmptyOrWhitespace = inputRef.current
-      ? inputRef.current?.value.trim() === ""
-      : true;
+    const isInputEmptyOrWhitespace = inputText.trim() === "";
 
     // 공백 문자만 입력되었거나 입력된 것이 없을 시, 이미지 생성 요청 안함
-    if (userData.coupon > 0 && inputRef.current && !isInputEmptyOrWhitespace) {
-      mutation.mutate(inputRef.current.value);
-      if (inputRef.current) {
-        setPrevPrompt(inputRef.current.value);
-      }
-      inputRef.current.value = "";
+    if (userData.coupon > 0 && !isInputEmptyOrWhitespace) {
+      mutation.mutate(inputText);
+      setPrevPrompt(inputText);
+      setInputText("");
 
       try {
         const decrementCouponResponse = await updateUserCoupon(
@@ -59,9 +72,11 @@ export default function AiGeneratorPage() {
         console.error("쿠폰 업데이트 실패", error);
       }
     }
+
+    stopListening();
   };
 
-  const handleButtonClick = () => {
+  const handleSubmitButtonClick = () => {
     if (userData.coupon < 1) {
       setCouponTextColor("text-blue-400");
 
@@ -76,6 +91,17 @@ export default function AiGeneratorPage() {
         300
       );
     }
+  };
+
+  const handleVoiceButtonClick = () => {
+    if (!listening) {
+      resetScript();
+    }
+    toggleListening();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
   };
 
   return (
@@ -156,17 +182,28 @@ export default function AiGeneratorPage() {
               className="bg-white w-full px-2"
               placeholder="생성할 이미지의 키워드를 적어주세요"
               type="text"
-              ref={inputRef}
+              value={inputText}
+              onChange={handleInputChange}
               required
             />
-            <button
-              className="py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm hover:cursor-pointer hover:bg-gray-300"
-              type="submit"
-              disabled={mutation.isLoading}
-              onClick={handleButtonClick}
-            >
-              전송
-            </button>
+
+            <div className="relative">
+              <button
+                className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 border-2 border-gray-300 shadow-sm hover:cursor-pointer hover:bg-gray-300" // 오른쪽과 위에 위치
+                type="button"
+                onClick={handleVoiceButtonClick}
+              >
+                {listening ? "🛑" : "🎤"}
+              </button>
+              <button
+                className="py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm hover:cursor-pointer hover:bg-gray-300"
+                type="submit"
+                disabled={mutation.isLoading}
+                onClick={handleSubmitButtonClick}
+              >
+                전송
+              </button>
+            </div>
           </form>
         </div>
       </div>
