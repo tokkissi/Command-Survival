@@ -450,7 +450,7 @@ export default function Console({
 
   return (
     <div
-      className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-auto ${flexiblePadding} ${flexibleFontSize}`}
+      className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-y-auto ${flexiblePadding} ${flexibleFontSize}`}
     >
       {/* 기존 질문과 답변 데이터 보여주기. 게임 첫 시작 시 고려해서 만들 것 */}
 
@@ -473,12 +473,9 @@ export default function Console({
         ))}
       </div>
 
-      <form
-        className="flex rounded-md mt-8 m-4 overflow-hidden"
-        onSubmit={handleSubmit}
-      >
+      <form className="flex mt-8 m-4" onSubmit={handleSubmit}>
         <input
-          className="bg-white w-full px-2 border outline-gray-600"
+          className="bg-white w-full px-2 border rounded-md outline-gray-600"
           placeholder="다음에 할 행동을 적어주세요(음성은 영어만 가능)"
           type="text"
           value={inputText}
@@ -494,7 +491,7 @@ export default function Console({
             {listening ? "🛑" : "🎤"}
           </button>
           <button
-            className={`py-1 px-4 bg-gray-200 whitespace-nowrap border-2 border-gray-300 shadow-sm ${
+            className={`py-1 px-4 bg-gray-200 whitespace-nowrap border-2 rounded-md border-gray-300 shadow-sm ${
               mutation.isLoading && "bg-gray-400"
             }`}
             type="submit"

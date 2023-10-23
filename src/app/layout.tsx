@@ -22,7 +22,7 @@ export default function RootLayout({
         <ReactQueryProvider>
           <AuthContext>
             <TopLogo />
-            <main className="grow">{children}</main>
+            <main className="grow overflow-y-auto">{children}</main>
           </AuthContext>
           <div id="portal" />
         </ReactQueryProvider>
