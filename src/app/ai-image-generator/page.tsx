@@ -112,12 +112,12 @@ export default function AiGeneratorPage() {
 
   return (
     <div className="p-2 h-full">
-      <div className="relative rounded overflow-hidden max-w-5xl w-full h-full flex flex-col mx-auto sm:flex-row ">
+      <div className="rounded overflow-hidden max-w-5xl w-full h-full flex flex-col mx-auto sm:flex-row ">
         <section className="flex flex-col p-2 items-center bg-white/80">
           <MenuList isAiPage />
         </section>
         <div
-          className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-auto ${flexiblePadding} ${flexibleFontSize} font-bold bg-white/90`}
+          className={`relative border bg-gray-500/70 w-full h-full flex flex-col overflow-auto ${flexiblePadding} ${flexibleFontSize} font-bold bg-white/90`}
         >
           {/* 빈 공간 상하좌우 가운데에 이미지 삽입 */}
           <div className="flex-grow flex flex-col items-center justify-center">
@@ -181,7 +181,7 @@ export default function AiGeneratorPage() {
           <div className="grow"></div>
 
           <form
-            className="flex rounded-md mt-8 m-4 overflow-hidden border-2 border-gray-800"
+            className="sticky bottom-0 min-h-[30px] flex rounded-md mt-8 m-4 overflow-hidden border-2 border-gray-800"
             onSubmit={handleFormSubmit}
           >
             <input

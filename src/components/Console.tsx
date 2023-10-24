@@ -450,7 +450,7 @@ export default function Console({
 
   return (
     <div
-      className={`border bg-gray-500/70 w-full h-full flex flex-col overflow-y-auto ${flexiblePadding} ${flexibleFontSize}`}
+      className={`relative border bg-gray-500/70 w-full h-full flex flex-col overflow-y-auto ${flexiblePadding} ${flexibleFontSize}`}
     >
       {/* 기존 질문과 답변 데이터 보여주기. 게임 첫 시작 시 고려해서 만들 것 */}
 
@@ -473,7 +473,7 @@ export default function Console({
         ))}
       </div>
 
-      <form className="flex mt-8 m-4" onSubmit={handleSubmit}>
+      <form className="flex mt-8 m-4 sticky bottom-0" onSubmit={handleSubmit}>
         <input
           className="bg-white w-full px-2 border rounded-md outline-gray-600"
           placeholder="다음에 할 행동을 적어주세요(음성은 영어만 가능)"
