@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 type DetailEnddingProps = {
   isVictory: boolean;
 };
 
 export default function DetailEndding({ isVictory }: DetailEnddingProps) {
-  console.log("승리?", isVictory);
   const hoverStyle = "hover:cursor-pointer hover:text-pink-600";
 
   return (

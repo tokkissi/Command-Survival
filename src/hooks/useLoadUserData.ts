@@ -1,5 +1,3 @@
-import { SaveData } from "@/model/gameData";
-import { UserData } from "@/model/userData";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 

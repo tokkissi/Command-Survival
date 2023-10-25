@@ -39,7 +39,6 @@ export default function AiGeneratorPage() {
   // 언 마운트 시, 음성인식 값을 초기화하고 음성인식 함수를 클린업 함수로 실행
   useEffect(() => {
     const cleanup = async () => {
-      console.log("Cleaning up...");
       await stopListening();
       resetScript();
     };

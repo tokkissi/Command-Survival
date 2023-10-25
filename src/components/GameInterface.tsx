@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Console from "./Console";
 import { useSession } from "next-auth/react";
 import { useLoadSaveData } from "@/hooks/useLoadSaveData";
@@ -38,8 +38,6 @@ export default function GameInterface() {
     error: errorUserData,
   } = useLoadUserData(email);
 
-  console.log("인터페이스에서 받은 세이브데이터 : ", fetchedSaveData);
-
   const handleFirstStartChange = () => {
     setIsFirstStart(false);
   };
@@ -50,7 +48,7 @@ export default function GameInterface() {
 
   if (isErrorSaveData) {
     const err = errorSaveData as Error;
-    console.log(err);
+
     const statusCode = parseInt(err.message.split(":")[1].trim());
     switch (statusCode) {
       case 401:
@@ -70,7 +68,7 @@ export default function GameInterface() {
 
   if (isErrorUserData) {
     const err = errorUserData as Error;
-    console.log(err);
+
     const statusCode = parseInt(err.message.split(":")[1].trim());
     switch (statusCode) {
       case 401:

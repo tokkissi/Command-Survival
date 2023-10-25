@@ -1,7 +1,6 @@
 import { Configuration, OpenAIApi } from "openai";
 
 export const generateImage = async (prompt: string) => {
-  console.log("ai 이미지 생성 요청");
   const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });

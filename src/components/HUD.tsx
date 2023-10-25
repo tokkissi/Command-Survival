@@ -17,8 +17,6 @@ export default function HUD() {
   const toggleBtnSize = 16;
   const mobileIconSize = 30;
 
-  console.log("HUD 에서 꺼낸 게임 데이터 : ", gameData);
-
   const handleToggle = () => {
     setMenuToggled(!menuToggled);
   };

@@ -47,42 +47,11 @@ export default function Console({
   const { transcript, listening, toggleListening, resetScript, stopListening } =
     useSpeechToText();
 
-  console.log("conversationHistory : ", conversationHistory);
-  console.log("console 컴포넌트 내의 gameData : ", gameData);
-
-  useEffect(() => {
-    console.log("isFirstStart 변경됨: ", isFirstStart);
-  }, [isFirstStart]);
-
-  useEffect(() => {
-    console.log("Console 컴포넌트 재렌더링");
-  });
-
-  useEffect(() => {
-    console.log("transcript updated: ", transcript);
-  }, [transcript]);
-
-  useEffect(() => {
-    console.log("inputText 업데이트: ", inputText);
-  }, [inputText]);
-
-  useEffect(() => {
-    console.log("Last message ref:", lastMessageRef.current);
-  }, [conversationHistory]);
-
-  useEffect(() => {
-    if (lastMessageRef.current) {
-      console.log("offsetTop:", lastMessageRef.current.offsetTop);
-    }
-  }, [conversationHistory]);
-
   const checkChoiceFormat = (text: string): boolean => {
     // 1. 선택지 1
     // 2. 선택지 2
     // 3. 선택지 3
     // 위와 같은 형식을 가진 문자열이라고 가정
-
-    console.log("받은 응답 이벤트 내용: ", text);
 
     // <br /> 태그를 '\n'으로 치환
     const replacedText = text.replace(/<br \/>/g, "\n");
@@ -102,10 +71,6 @@ export default function Console({
   };
 
   const saveGameDataMutation = useMutation(saveGameDataAndHistory, {
-    onSuccess: (res) => {
-      console.log("저장한 게임 데이터 : ", res);
-      console.log("게임 데이터 저장 성공");
-    },
     onError: (error) => {
       console.error("게임 데이터 저장 실패: ", error);
     },
@@ -113,12 +78,6 @@ export default function Console({
 
   const mutation = useMutation(askAIWithUserInput, {
     onSuccess: (res) => {
-      console.log(
-        "요청 성공 시 현재 층 확인: ",
-        gameData.gameState.currentFloor
-      );
-      console.log("요청 성공 시 최대 층 확인: ", gameData.gameState.maxFloor);
-
       // 초기 응답 형식에 맞지 않아 parsing 하지 못할 때, 사용할 기본값
       const defaultAtk = parseInt(process.env.NEXT_PUBLIC_DEFAULT_ATK!);
       const defaultDef = parseInt(process.env.NEXT_PUBLIC_DEFAULT_DEF!);
@@ -141,7 +100,6 @@ export default function Console({
       // 형식에 맞으면 parsing하여 추출해서 각데이터를 전역 상수로 세팅.
       // 형식에 맞지 않으면 기본값을 세팅
       if (isFirstStart) {
-        console.log("isFirstStart 시, 문자열 파싱하여 게임 데이터 상태 갱신함");
         const atk = parseInt(res.match(/ATK:\s*(\d+)/)?.[1] || defaultAtk);
         const def = parseInt(res.match(/DEF:\s*(\d+)/)?.[1] || defaultDef);
         const maxhp = parseInt(
@@ -193,8 +151,6 @@ export default function Console({
         }
       }
 
-      console.log("battleLog 확인:", battleLog);
-
       const combinedResponse = `${battleLog}\n\n${res}`;
 
       updateGameDataAfterBattle(battleLog);
@@ -232,12 +188,6 @@ export default function Console({
   }, [isFirstStart]);
 
   useEffect(() => {
-    if (gameData.gameState) {
-      console.log("층 확인", gameData.gameState?.currentFloor);
-    }
-  }, [gameData.gameState]);
-
-  useEffect(() => {
     // gameData 또는 conversationHistory가 변경되면 DB에 저장
     if (isGPTResponseReceived) {
       saveGameDataMutation.mutate({
@@ -262,7 +212,6 @@ export default function Console({
   // 언 마운트 시, 음성인식 함수를 클린업 함수로 실행
   useEffect(() => {
     const cleanup = async () => {
-      console.log("Cleaning up...");
       await stopListening();
       resetScript();
     };
@@ -274,11 +223,10 @@ export default function Console({
 
   // 음성인식으로 받은 값을 상태로 설정
   useEffect(() => {
-    console.log("음성인식으로 받은 값 세팅 useEffect: ", transcript);
-
     setInputText(transcript);
   }, [transcript]);
 
+  // 전송 버튼 클릭 시, 새로 생성된 텍스트 버블로 스크롤 이동
   useEffect(() => {
     if (lastMessageRef.current) {
       const lastMessageElement = lastMessageRef.current;
@@ -307,7 +255,6 @@ export default function Console({
       // 입력 시 층 증가
       if (shouldIncrementFloor) {
         newFloor = incrementFloor();
-        console.log("증가된 뉴 플로어", newFloor);
       }
 
       // 마지막 층 도달 시 보스 전투
@@ -330,8 +277,6 @@ export default function Console({
           hp: gameData.gameState.hp,
           currentFloor: newFloor,
         });
-
-        console.log("배틀로그 생성됨 :", battleLog);
 
         const isDefeated = battleLog.includes("전투 패배!");
 
@@ -377,7 +322,6 @@ export default function Console({
 
   const updateGameDataAfterBattle = (battleLog: string) => {
     const remainingHpMatch = battleLog.match(/남은 체력:\s*(\d+)/);
-    console.log("remainingHpMatch 확인 : ", remainingHpMatch);
 
     if (remainingHpMatch) {
       const remainingHp = parseInt(remainingHpMatch[1]);
@@ -405,7 +349,6 @@ export default function Console({
 
   const handleVictory = async () => {
     // 모달로 승리 이미지 보여주고, 유저 쿠폰 수 +1 해주고 보여준 뒤, 타이틀로 리다이렉트
-    console.log("승리 함수 실행");
 
     try {
       // 현재 쿠폰 수 가져오기
@@ -413,7 +356,6 @@ export default function Console({
 
       // API 호출을 통해 쿠폰 수를 1 증가시키고 결과를 받음
       const updateCouponResponse = await updateUserCoupon(currentCoupon + 1);
-      console.log("쿠폰 업데이트 응답 결과:  ", updateCouponResponse);
 
       // db에 쿠폰 증가 요청 응답이 정상이라면 store의 전역 상태의 쿠폰 수도 증가 시킴
       if (updateCouponResponse.status === 200) {
@@ -462,16 +404,10 @@ export default function Console({
   };
 
   const handleVoiceButtonClick = () => {
-    console.log(
-      "handleVoiceButtonClick called. Current listening state: ",
-      listening
-    );
-
     if (!listening) {
       resetScript();
     }
     toggleListening();
-    console.log("토글 리스닝 실행");
   };
 
   return (

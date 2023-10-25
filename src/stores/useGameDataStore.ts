@@ -1,4 +1,4 @@
-import { Attribute, GameData } from "@/model/gameData";
+import { GameData } from "@/model/gameData";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -39,7 +39,6 @@ export const useGameDataStore = create<GameStore>()(
         }
       },
       incrementFloor: () => {
-        console.log("incrementFloor is called");
         let newFloor = 0;
         set((prevState) => {
           newFloor = prevState.gameData.gameState.currentFloor + 1;
