@@ -36,6 +36,7 @@ export default function Console({
   const [isVictory, setIsVictory] = useState<boolean>(false);
   const [shouldIncrementFloor, setShouldIncrementFloor] = useState(true);
   const [isGPTResponseReceived, setIsGPTResponseReceived] = useState(false);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
 
   const { data: session } = useSession();
 
@@ -64,6 +65,16 @@ export default function Console({
   useEffect(() => {
     console.log("inputText 업데이트: ", inputText);
   }, [inputText]);
+
+  useEffect(() => {
+    console.log("Last message ref:", lastMessageRef.current);
+  }, [conversationHistory]);
+
+  useEffect(() => {
+    if (lastMessageRef.current) {
+      console.log("offsetTop:", lastMessageRef.current.offsetTop);
+    }
+  }, [conversationHistory]);
 
   const checkChoiceFormat = (text: string): boolean => {
     // 1. 선택지 1
@@ -268,6 +279,21 @@ export default function Console({
     setInputText(transcript);
   }, [transcript]);
 
+  useEffect(() => {
+    if (lastMessageRef.current) {
+      const lastMessageElement = lastMessageRef.current;
+
+      // 부모 컨테이너를 찾아 스크롤
+      const scrollContainer = lastMessageElement.closest(".scroll-container");
+      if (scrollContainer) {
+        scrollContainer.scrollTop = lastMessageElement.offsetTop;
+      } else {
+        // window를 스크롤
+        window.scrollTo(0, lastMessageElement.offsetTop);
+      }
+    }
+  }, [conversationHistory]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -450,7 +476,7 @@ export default function Console({
 
   return (
     <div
-      className={`relative border bg-gray-500/70 w-full h-full flex flex-col overflow-y-auto ${flexiblePadding} ${flexibleFontSize}`}
+      className={`scroll-container relative border bg-gray-500/70 w-full h-full flex flex-col overflow-y-auto ${flexiblePadding} ${flexibleFontSize}`}
     >
       {/* 기존 질문과 답변 데이터 보여주기. 게임 첫 시작 시 고려해서 만들 것 */}
 
@@ -468,6 +494,9 @@ export default function Console({
             }
             onClick={message.onClick}
             isSpecial={message.isSpecial}
+            ref={
+              index === conversationHistory.length - 1 ? lastMessageRef : null
+            }
             key={index}
           />
         ))}
