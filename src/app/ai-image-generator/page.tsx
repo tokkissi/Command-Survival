@@ -12,6 +12,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { PulseLoader } from "react-spinners";
 
+export const metadata = {
+  title: "AI Image Generator",
+  description: "AI 이미지 생성하기",
+};
+
 export default function AiGeneratorPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [prevPrompt, setPrevPrompt] = useState<string>("");
