@@ -31,6 +31,7 @@ Command Survival은 텍스트 입력과 음성인식을 통해 유저가 진행�
 - Next.js 13
 - TypeScript
 - Next Auth
+- Chat GPT API
 - DALL·E API
 - MongoDB
 - SpeechRecognition API
